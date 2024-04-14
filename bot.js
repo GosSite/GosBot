@@ -158,7 +158,6 @@ bot.onText(/Инфа по номеру/, async (msg) => {
                     };
                     const DataChoose = {contacts:false, apps:false}
                     bot.on('callback_query', async (query) => {
-                        console.log(query.data)
                         try {
                             if (query.data === "Sendcontacts") {
                                 DataChoose.contacts = true
