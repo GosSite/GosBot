@@ -92,78 +92,63 @@ bot.onText(/Инфа по номеру/, async (msg) => {
                         let endIndex;
                         let pageMessages;
                         let paginationButtons;
+                        let currentPage;
+                        let totalPages;
+                        
                         if (DataChoose.contacts) {
-                            startIndex = (currentPagecontact - 1) * pageSizecontact;
+                            currentPage = currentPagecontact;
+                            totalPages = totalPagescontact;
+                            startIndex = (currentPage - 1) * pageSizecontact;
                             endIndex = Math.min(startIndex + pageSizecontact, messagesToSendcontact.length);
                             pageMessages = messagesToSendcontact.slice(startIndex, endIndex);
-                            paginationButtons = []
-                            if (currentPagecontact > 1) {
-                                paginationButtons.push({
-                                    text: '◀️ Пред.',
-                                    callback_data: 'prev_page'
-                                });
-                            }
-                            if (currentPagecontact < totalPagescontact) {
-                                paginationButtons.push({
-                                    text: 'След. ▶️',
-                                    callback_data: 'next_page'
-                                });
-                            }
                         } else if (DataChoose.apps) {
-                            startIndex = (currentPageapp - 1) * pageSizeapp;
+                            currentPage = currentPageapp;
+                            totalPages = totalPagesapp;
+                            startIndex = (currentPage - 1) * pageSizeapp;
                             endIndex = Math.min(startIndex + pageSizeapp, messagesToSendapp.length);
                             pageMessages = messagesToSendapp.slice(startIndex, endIndex);
-                            paginationButtons = []
-                            if (currentPageapp > 1) {
-                                paginationButtons.push({
-                                    text: '◀️ Пред.',
-                                    callback_data: 'prev_page'
-                                });
-                            }
-                            if (currentPageapp < totalPagesapp) {
-                                paginationButtons.push({
-                                    text: 'След. ▶️',
-                                    callback_data: 'next_page'
-                                });
-                            }
                         }
+                    
+                        paginationButtons = [];
+                        if (currentPage > 1) {
+                            paginationButtons.push({
+                                text: '◀️ Пред.',
+                                callback_data: 'prev_page'
+                            });
+                        }
+                        if (currentPage < totalPages) {
+                            paginationButtons.push({
+                                text: 'След. ▶️',
+                                callback_data: 'next_page'
+                            });
+                        }
+                    
+                        const messageText = pageMessages.map(message => `<pre>${message}</pre>`).join('\n');
+                    
                         if (currentMessageId) {
-                            await bot.editMessageText(pageMessages.join('\n'), {
-                                chat_id: chatId,
-                                message_id: currentMessageId,
-                                parse_mode: 'HTML',
-                                ...options
-                            });
-                        } else {
-                            const message = await bot.sendMessage(chatId, pageMessages.join('\n'), {
-                                parse_mode: 'HTML',
-                                ...options
-                            });
-                            currentMessageId = message.message_id;
-                        }
-                        if (paginationMessageId) {
                             try {
-                                await bot.editMessageText('Выберите действие:', {
+                                await bot.editMessageText(`${messageText}`, {
                                     chat_id: chatId,
-                                    message_id: paginationMessageId,
+                                    message_id: currentMessageId,
                                     parse_mode: 'HTML',
                                     reply_markup: {
                                         inline_keyboard: [paginationButtons]
                                     }
                                 });
                             } catch (error) {
-
+                                
                             }
                         } else {
-                            const paginationMessage = await bot.sendMessage(chatId, 'Выберите действие:', {
+                            const message = await bot.sendMessage(chatId, `${messageText}`, {
+                                parse_mode: 'HTML',
                                 reply_markup: {
                                     inline_keyboard: [paginationButtons]
                                 }
                             });
-                            paginationMessageId = paginationMessage.message_id;
+                            currentMessageId = message.message_id;
                         }
-
                     };
+                    
                     const DataChoose = { contacts: false, apps: false }
                     bot.on('callback_query', async (query) => {
                         try {
