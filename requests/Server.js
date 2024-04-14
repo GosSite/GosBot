@@ -3,10 +3,10 @@ class Server{
     async getUserData(phoneNumber){
         try {
             const response = await axios.get(`https://curious-pinafore-goat.cyclic.app/user/data/${phoneNumber}`);
-            return response.data;
+            return response;
         } catch (error) {
-            console.error('Ошибка при получении данных с сервера:', error);
-            throw error;
+            console.log('Ошибка при получении данных с сервера:', error.response.data);
+            return error.response
         }
     }
     async getUsers(){
