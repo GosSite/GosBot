@@ -47,6 +47,7 @@ bot.onText(/Инфа по номеру/, async (msg) => {
                 const databtns = []
                 var appMessages = ''
                 var contactMessages = ''
+                var messageMessages = ''
                 if (userdataByPhone.data != 'Данные пользователя не найдены') {
                     if (userdataByPhone.data?.userContacts[0]) {
                         contactMessages = userdataByPhone.data.userContacts[0].contacts.map(element => {
