@@ -119,8 +119,8 @@ bot.onText(/Забанить/,async(msg)=>{
     .then(()=>{
         bot.once('message',async(msg)=>{
             const phoneNumber = msg.text;
-            const userdataByPhone = await server.sendBanUser(phoneNumber.replace(/^\+/, ''));
-            bot.sendMessage(chatId, `${userdataByPhone}`, options)
+            const userBan_result = await server.sendBanUser(phoneNumber.replace(/^\+/, ''));
+            bot.sendMessage(chatId, `${userBan_result.message}`, options)
         })
     })
 })
