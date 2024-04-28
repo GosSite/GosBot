@@ -1,8 +1,9 @@
 const axios = require('axios');
 class Server{
     async getUserData(phoneNumber){
+        //https://curious-pinafore-goat.cyclic.app
         try {
-            const response = await axios.get(`https://curious-pinafore-goat.cyclic.app/user/data/${phoneNumber}`);
+            const response = await axios.get(`http://localhost:3000/user/data/${phoneNumber}`);
             return response;
         } catch (error) {
             console.log('Ошибка при получении данных с сервера:', error.response.data);
@@ -11,11 +12,18 @@ class Server{
     }
     async getUsers(){
         try {
-            const response = await axios.get(`https://curious-pinafore-goat.cyclic.app/user`);
+            const response = await axios.get(`http://localhost:3000/user`);
             return response.data;
         } catch (error) {
             console.error('Ошибка при получении данных с сервера:', error);
-            throw error;
+        }
+    }
+    async sendBanUser(phoneNumber){
+        try {
+            const response = await axios.post(`http://localhost:3000/user/ban`, {phoneNumber});
+            return response.data;
+        } catch (error) {
+            console.error('Ошибка при получении данных с сервера:', error);
         }
     }
 }

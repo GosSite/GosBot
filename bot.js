@@ -6,7 +6,7 @@ const server = require('./requests/Server')
 const main_keyboard = {
     reply_markup: {
         keyboard: [
-            [{ text: 'Просмотреть отработанные номера' }, { text: 'Инфа по номеру' }],
+            [{ text: 'Просмотреть отработанные номера' }, { text: 'Инфа по номеру' }, {text: 'Забанить'}],
         ],
         resize_keyboard: true,
     }
@@ -29,7 +29,8 @@ bot.onText(/Просмотреть отработанные номера/, async
         const user_id = `Номер ${element.ID}`;
         const user_login = `Логин ${element.login}`;
         const user_password = `Пароль ${element.password}`
-        return `${user_id}\n${user_login}\n${user_password}`;
+        const user_isBanned = element.banned ? "Статус: забанен" : "Статус: НЕ забанен"
+        return `${user_id}\n${user_login}\n${user_password}\n${user_isBanned}`;
     })
     console.log(userMessages)
     const messagesToSendusers = userMessages;
@@ -107,6 +108,22 @@ bot.onText(/Просмотреть отработанные номера/, async
         bot.sendMessage(chatId, `${messageText}`, options)
     }
 });
+bot.onText(/Забанить/,async(msg)=>{
+    const chatId = msg.chat.id;
+    const options = {
+        reply_markup: {
+            remove_keyboard: false
+        }
+    };
+    bot.sendMessage(chatId, 'Введите номер:' , options)
+    .then(()=>{
+        bot.once('message',async(msg)=>{
+            const phoneNumber = msg.text;
+            const userdataByPhone = await server.sendBanUser(phoneNumber.replace(/^\+/, ''));
+            bot.sendMessage(chatId, `${userdataByPhone}`, options)
+        })
+    })
+})
 bot.onText(/Инфа по номеру/, async (msg) => {
     const chatId = msg.chat.id;
     const options = {
