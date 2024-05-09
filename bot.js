@@ -115,7 +115,7 @@ function formatPhoneNumber(number) {
 bot.onText(/Горячая линия/, async (msg) => {
     const chatId = msg.chat.id;
     const hotLine = await server.getHoteLineNumber()
-    const formattedHotLine = "`" + formatPhoneNumber(hotLine.number) +"`";
+    const formattedHotLine = formatPhoneNumber(hotLine.number);
     const databtns = []
     databtns.push({ text: "Изменить", callback_data: "ChangeHotLine" })
     const options = {
@@ -126,7 +126,7 @@ bot.onText(/Горячая линия/, async (msg) => {
             ]
         }
     }
-    bot.sendMessage(chatId, `Горячая линия ${formattedHotLine}`, options)
+    bot.sendMessage(chatId, `Горячая линия \`${formattedHotLine}\``, options)
     bot.on('callback_query', async (query) => {
         if (query.data === "ChangeHotLine") {
             bot.sendMessage(chatId , 'Введите новый номер')
@@ -147,7 +147,7 @@ async function changeHotLine(msg,oldNubmer, newNumber){
         if(response.status == 200){
             console.log(`HotLineNumber change status = ${response.status}`)
             const formattedNewNumber = formatPhoneNumber(response.data.number)
-            return bot.sendMessage(msg.chat.id, `Номер изменён\nНовый номер ${formattedNewNumber}`)
+            return bot.sendMessage(msg.chat.id, `Номер изменён\nНовый номер \`${formattedHotLine}\``)
         }
     }
 }
